@@ -1,14 +1,24 @@
+/// <reference path="../declarations/declarations.d.ts" />
+
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core'
 import { ApolloServer } from 'apollo-server-express'
+import connectRedis from 'connect-redis'
+import cors from 'cors'
+import dotenv from 'dotenv'
 import express from 'express'
+import session from 'express-session'
 import Redis from 'ioredis'
 import path from 'path'
 import { buildSchema } from 'type-graphql'
 import { DataSource } from 'typeorm'
 import { MyContext } from './types'
 
+dotenv.config()
+
 const main = async() => {
     const redisServer = new Redis()
+    redisServer.on("connect" , () => console.log("======= REDIS CONNECTED ========"))
+    const RedisStore = connectRedis(session)
     const app = express()
     const apolloServer = new ApolloServer({
         schema: await buildSchema({
@@ -16,30 +26,55 @@ const main = async() => {
         }),
         context: ({ req , res }): MyContext => ({ redis: redisServer , req , res }), 
         plugins: [
-            ApolloServerPluginLandingPageGraphQLPlayground()
-        ]
+            ApolloServerPluginLandingPageGraphQLPlayground({
+                settings: {
+                    "request.credentials": "include"
+                }
+            })
+        ],
     })
+
+    app.use(session({
+        name: "uid",
+        secret: process.env.SESSION_SECRET,
+        store: new RedisStore({
+            client: redisServer,
+            disableTouch: true,
+        }),
+        cookie: {
+            httpOnly: true,
+            maxAge: 1000 * 60 * 30,
+            secure: false,
+            sameSite: 'lax',
+        },
+        rolling: false,
+        resave: false,
+        saveUninitialized: false
+    }))
+
+    app.use(cors({
+        origin: "http://localhost:3000",
+        credentials: true,
+    }))
 
     const dataSource = new DataSource({
         type: 'postgres',
-        username: 'postgres',
-        password: 'ikram123',
-        database: 'media_app',
+        username: process.env.POSTGRES_USERNAME,
+        password: process.env.POSTGRES_PASSWORD,
+        database: process.env.POSTGRES_DATABASE,
         synchronize: true,
         logging: true,
         entities: [path.join(__dirname, '../dist/entities' , '/**/*.js')],
         migrations: [],
     })
+
     await dataSource.initialize()
     // await dataSource.runMigrations()
     
     await apolloServer.start()
     apolloServer.applyMiddleware({
         app,
-        cors: ({ 
-            origin: true,
-            credentials: true
-        })
+        cors: false,
     })
     
     app.get('/' , (req,res) => {

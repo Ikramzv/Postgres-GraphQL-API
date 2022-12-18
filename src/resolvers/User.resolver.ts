@@ -1,63 +1,73 @@
-import bcrypt from 'bcrypt';
-import { Arg, Args, ArgsType, Field, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import PostEntity from "../entities/Post.entity";
 import SaveEntity from '../entities/Save.entity';
 import UserEntity from "../entities/User.entity";
+import { MyContext } from '../types';
 
-
-@ArgsType()
-class RegisterUserArgs {
-    @Field(() => String)
-    username: string
-
-    @Field(() => String)
-    email: string
-
-    @Field(() => String)
-    password: string
-
-    @Field(() => String)
-    image: string
-}
 
 @Resolver(() => UserEntity)
 class UserResolver {
-    @Query(() => UserEntity)
+
+    @Query(() => UserEntity , { nullable: true })
     async getUser (
-        @Arg("id") userId: string
+        @Arg("id" , () => String , { nullable: true }) userId: string,
+        @Arg("email" , () => String , { nullable: true }) email: string
     ) {
-        const user = await UserEntity.query(`
-            SELECT * FROM users u WHERE u.id == '${userId}'
-        `)
-
-        return user
-    }
-
-    @Mutation(() => UserEntity , { nullable: true })
-    async register (
-        @Args(() => RegisterUserArgs) options: RegisterUserArgs
-    ) {
-        const password = await bcrypt.hash(options.password , 12)
-        const user = await UserEntity.query(`
-            INSERT INTO users (
-                id , username , email , password , image
-            ) VALUES (
-                DEFAULT , '${options.username}' , '${options.email}' , '${password}' , '${options.image}'
-            ) ON CONFLICT DO NOTHING RETURNING *
-        `)
+        let user
+        if(userId) {
+            user = await UserEntity.query(`
+                SELECT * FROM users u WHERE u.id = '${userId}'
+            `)
+        } else if(email) {
+            user = await UserEntity.query(`
+                SELECT * FROM users u WHERE u.email = '${email}'
+            `)
+        }
 
         return user[0] ?? null
     }
 
+    @Query(() => UserEntity , { nullable: true })
+    async callMe (
+        @Ctx() { req } : MyContext
+    ) {
+        const { session } = req
+        if(!session.userId) return null
+        const user = await UserEntity.query(`
+            SELECT * FROM users u WHERE u.id = '${session.userId}'
+        `)
+        return user[0]
+    }
+
+    @Query(() => [PostEntity])
+    async savedPosts (
+        @Ctx() { req } : MyContext
+    ) {
+        const { session } = req
+        if(!session.userId) return
+        const { userId } = session
+        const posts = await SaveEntity.query(`
+            SELECT "postId" , p.* FROM saves s 
+            LEFT JOIN posts p ON p.id = s."postId" 
+            WHERE s."userId" = $1
+        ` , [userId])
+
+        console.log(posts)
+
+        return posts
+    }
 
     @Mutation(() => Boolean)
     async savePost(
         @Arg("postId" , () => String) postId: string,
-        @Arg("userId" , () => String) userId: string 
+        @Ctx() { req }: MyContext
     ): Promise<Boolean> {
+        const { session: { userId } } = req
+        if(!userId) return false
         try {
             await SaveEntity.query(`
-                INSERT INTO saves (id,"postId","userId") VALUES ( DEFAULT , '${postId}' , '${userId}' )
-            `)
+                INSERT INTO saves (id,"postId","userId") VALUES ( DEFAULT , $1 , $2 )
+            ` , [postId ,  userId])
             return true
         } catch (error) {
             return false
@@ -79,6 +89,7 @@ class UserResolver {
             return false
         }
     }
+    
 
 }
 
