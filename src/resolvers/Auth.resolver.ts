@@ -1,4 +1,6 @@
 import bcrypt from 'bcrypt';
+import * as jwt from 'jsonwebtoken';
+import jwt_decode from 'jwt-decode';
 import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
 import UserEntity from "../entities/User.entity";
 import { LoginUserArgs, RegisterUserArgs, UserOrError } from "../inputs/inputs";
@@ -32,7 +34,17 @@ class AuthResolver {
             }
         }  
         
+        const payload = {
+            id: u.id,
+            email: u.email,
+            username: u.username
+        }
+        const accessToken = generateAccessToken(payload)
+        const refreshToken = generateRefreshToken(payload)
+        
         req.session.userId = u.id
+        req.session.accessToken = accessToken
+        req.session.refreshToken = refreshToken
         
         return {
             data: u,
@@ -56,6 +68,30 @@ class AuthResolver {
         return user[0] ?? null
     }
 
+    @Mutation(() => String)
+    async refreshAccessToken(
+        @Ctx() { req }: MyContext
+    ) {
+        const { refreshToken, accessToken } = req.session
+        const decodedAccessToken = jwt_decode(accessToken as string)
+        if(Date.now() > (decodedAccessToken as any).exp) {
+            jwt.verify(refreshToken as string,process.env.JWT_REFRESH_SECRET, (err,data) => {
+                if(err) return err
+                delete (data as any).iat
+                const payload = {
+                    ...data as any,
+                }
+                const newRefreshToken = generateRefreshToken(payload)
+                const newAccessToken = generateAccessToken(payload)
+                
+                req.session.accessToken = newAccessToken
+                req.session.refreshToken = newRefreshToken 
+            })
+        }
+
+        return ""
+    }
+
     @Mutation(() => Boolean)
     async logout (
         @Ctx() { req , res } : MyContext
@@ -72,5 +108,14 @@ class AuthResolver {
         }
     }
 }
+
+const generateAccessToken = (payload: any) => {
+    return jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: 60 * 5 })
+}
+
+const generateRefreshToken = (payload: any) => {
+    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET)
+}
+
 
 export default AuthResolver
