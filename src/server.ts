@@ -20,11 +20,25 @@ const main = async() => {
     redisServer.on("connect" , () => console.log("======= REDIS CONNECTED ========"))
     const RedisStore = connectRedis(session)
     const app = express()
+
+    const dataSource = new DataSource({
+        type: 'postgres',
+        username: process.env.POSTGRES_USERNAME,
+        password: process.env.POSTGRES_PASSWORD,
+        database: process.env.POSTGRES_DATABASE,
+        synchronize: true,
+        logging: true,
+        entities: [path.join(__dirname, '../dist/entities' , '/**/*.js')],
+        migrations: [],
+    })
+
+    await dataSource.initialize()
+
     const apolloServer = new ApolloServer({
         schema: await buildSchema({
             resolvers: [path.join(__dirname, '../dist/resolvers' , '/*.resolver.js')],
         }),
-        context: ({ req , res }): MyContext => ({ redis: redisServer , req , res }), 
+        context: ({ req , res }): MyContext => ({ redis: redisServer , req , res, dataSource }), 
         plugins: [
             ApolloServerPluginLandingPageGraphQLPlayground({
                 settings: {
@@ -43,7 +57,7 @@ const main = async() => {
         }),
         cookie: {
             httpOnly: true,
-            maxAge: 1000 * 60 * 30,
+            maxAge: 1000 * 60 * 60 * 24,
             secure: false,
             sameSite: 'lax',
         },
@@ -57,18 +71,6 @@ const main = async() => {
         credentials: true,
     }))
 
-    const dataSource = new DataSource({
-        type: 'postgres',
-        username: process.env.POSTGRES_USERNAME,
-        password: process.env.POSTGRES_PASSWORD,
-        database: process.env.POSTGRES_DATABASE,
-        synchronize: true,
-        logging: true,
-        entities: [path.join(__dirname, '../dist/entities' , '/**/*.js')],
-        migrations: [],
-    })
-
-    await dataSource.initialize()
     // await dataSource.runMigrations()
     
     await apolloServer.start()
