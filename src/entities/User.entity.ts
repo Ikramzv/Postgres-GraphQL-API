@@ -1,5 +1,7 @@
 import { Field, ObjectType } from "type-graphql";
 import { BaseEntity, Check, Column, Entity, OneToMany, PrimaryColumn, Unique } from "typeorm";
+import CommentEntity from "./Comment.entity";
+import LikesEntity from "./Likes.entity";
 import PostEntity from "./Post.entity";
 import SaveEntity from "./Save.entity";
 
@@ -34,6 +36,12 @@ class UserEntity extends BaseEntity {
 
     @OneToMany(() => SaveEntity , (saves) => saves.user)
     saves: SaveEntity[]
+
+    @OneToMany(() => CommentEntity , (comment) => comment.user)
+    comments: CommentEntity[]
+
+    @OneToMany(() => LikesEntity , (comment) => comment.user)
+    likes: LikesEntity[]
 }
 
 export default UserEntity

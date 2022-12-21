@@ -1,7 +1,8 @@
-import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { Arg, Ctx, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
 import PostEntity from "../entities/Post.entity";
 import SaveEntity from '../entities/Save.entity';
 import UserEntity from "../entities/User.entity";
+import Auth from "../middlewares/Auth";
 import { MyContext } from '../types';
 
 
@@ -10,19 +11,22 @@ class UserResolver {
 
     @Query(() => UserEntity , { nullable: true })
     async getUser (
-        @Arg("id" , () => String , { nullable: true }) userId: string,
-        @Arg("email" , () => String , { nullable: true }) email: string
+        @Arg("id" , () => String , { nullable: true }) id: string,
+        @Arg("email" , () => String , { nullable: true }) email: string,
+        @Arg("username" , () => String , { nullable: true }) username: string,
     ) {
-        let user
-        if(userId) {
-            user = await UserEntity.query(`
-                SELECT * FROM users u WHERE u.id = '${userId}'
-            `)
-        } else if(email) {
-            user = await UserEntity.query(`
-                SELECT * FROM users u WHERE u.email = '${email}'
-            `)
-        }
+        const defined = [{id},{email},{username}].reduce<string[]>((initial , arg) => {
+            if(initial.length) return initial
+            const value: any = Object.values(arg)[0]
+            if(typeof value === "undefined") return initial
+            const key = Object.keys(arg)[0]
+            return [key,value]
+        } , [])
+
+        let user = await UserEntity.query(`
+            SELECT * FROM users u WHERE u."${defined[0]}" ILIKE '${defined[1]}'
+        `)
+    
 
         return user[0] ?? null
     }
@@ -40,19 +44,16 @@ class UserResolver {
     }
 
     @Query(() => [PostEntity])
+    @UseMiddleware(Auth)
     async savedPosts (
         @Ctx() { req } : MyContext
     ) {
-        const { session } = req
-        if(!session.userId) return
-        const { userId } = session
+        const { userId } = req.session
         const posts = await SaveEntity.query(`
             SELECT "postId" , p.* FROM saves s 
             LEFT JOIN posts p ON p.id = s."postId" 
             WHERE s."userId" = $1
         ` , [userId])
-
-        console.log(posts)
 
         return posts
     }

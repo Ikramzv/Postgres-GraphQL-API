@@ -1,5 +1,7 @@
 import { Field, ObjectType } from "type-graphql";
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn } from "typeorm";
+import CommentEntity from "./Comment.entity";
+import LikesEntity from "./Likes.entity";
 import SavesEntity from "./Save.entity";
 import UserEntity from "./User.entity";
 
@@ -26,8 +28,14 @@ class PostEntity extends BaseEntity {
     @Field(() => String)
     userId: UserEntity
 
-    @OneToMany(() => SavesEntity , (save) => save.post)
+    @OneToMany(() => SavesEntity , (save) => save.post , { cascade: ["remove"] })
     saves: SavesEntity[]
+
+    @OneToMany(() => CommentEntity , (comment) => comment.post, { cascade: ["remove"] })
+    comments: CommentEntity[]
+
+    @OneToMany(() => LikesEntity , (likes) => likes.post , { cascade: ["remove"] })
+    likes: LikesEntity[]
 }
 
 export default PostEntity
