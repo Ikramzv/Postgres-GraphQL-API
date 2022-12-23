@@ -1,87 +1,14 @@
-import { Arg, Args, ArgsType, Ctx, Field, FieldResolver, InputType, Mutation, Query, Resolver, Root, UseMiddleware } from "type-graphql";
-import CommentEntity from "../entities/Comment.entity";
-import LikesEntity from "../entities/Likes.entity";
-import PostEntity from "../entities/Post.entity";
-import UserEntity from "../entities/User.entity";
-import auth from "../middlewares/Auth";
-import { MyContext } from "../types";
+import { Arg, Args, Ctx, Mutation, UseMiddleware } from "type-graphql"
+import CommentEntity from "../../../entities/Comment.entity"
+import LikesEntity from "../../../entities/Likes.entity"
+import PostEntity from "../../../entities/Post.entity"
+import { PostArgs, UpdateArgs } from "../../../inputs/inputs"
+import auth from "../../../middlewares/Auth"
+import { MyContext } from "../../../types"
 
-@ArgsType()
-class PostArgs {
-    @Field(() => String)
-    title: string
 
-    @Field(() => String)
-    description: string
-}
 
-@InputType()
-class UpdateArgs {
-    @Field(() => String)
-    postId: string
-
-    @Field(() => String, { nullable: true })
-    title: string
-
-    @Field(() => String, { nullable: true })
-    description: string
-}
-
-@Resolver(() => PostEntity)
-class PostResolver {
-    @FieldResolver(() => UserEntity)
-    async user (
-        @Root() post: PostEntity
-    ) {
-        const user = await UserEntity.query(`
-            SELECT * FROM users u WHERE u.id = '${post.userId}'
-        `)
-
-        return user[0]
-    }
-
-    @FieldResolver(() => [String])
-    async likes(
-        @Root() post: PostEntity
-    ) {
-        const likes: {userId: string}[] = await LikesEntity.query(`
-            SELECT "userId" FROM likes l WHERE l."postId" = '${post.id}'
-        `)
-        
-        return likes.map((item) => item.userId)
-    }
-
-    @FieldResolver(() => [CommentEntity])
-    async comments(
-        @Root() post: PostEntity
-    ) {
-        const comment = await CommentEntity.query(`
-            SELECT c.* FROM comments c WHERE c."postId" = '${post.id}'
-        `)
-
-        return comment
-    }
-
-    @Query(() => [PostEntity])
-    async posts (): Promise<PostEntity[]> {
-        const posts = await PostEntity.query(`
-            SELECT * FROM posts p
-        `)
-
-        return posts
-    }
-
-    @Query(() => PostEntity)
-    async post(
-        @Arg("id",() => String) postId: string
-    ): Promise<PostEntity> {
-        const post = await PostEntity.query(`
-            SELECT * FROM posts p WHERE p.id = '${postId}'
-        `)
-
-        return post
-    }
-
+class PostMutationResolver {
     @Mutation(() => PostEntity)
     @UseMiddleware(auth)
     async createPost (
@@ -192,4 +119,4 @@ class PostResolver {
     }
 }
 
-export default PostResolver
+export default PostMutationResolver

@@ -1,14 +1,13 @@
 import { Arg, Ctx, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
-import PostEntity from "../entities/Post.entity";
-import SaveEntity from '../entities/Save.entity';
-import UserEntity from "../entities/User.entity";
-import Auth from "../middlewares/Auth";
-import { MyContext } from '../types';
+import PostEntity from "../../entities/Post.entity";
+import SaveEntity from '../../entities/Save.entity';
+import UserEntity from "../../entities/User.entity";
+import Auth from "../../middlewares/Auth";
+import { MyContext } from '../../types';
 
 
 @Resolver(() => UserEntity)
 class UserResolver {
-
     @Query(() => UserEntity , { nullable: true })
     async getUser (
         @Arg("id" , () => String , { nullable: true }) id: string,

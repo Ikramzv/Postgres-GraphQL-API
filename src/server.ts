@@ -36,7 +36,7 @@ const main = async() => {
 
     const apolloServer = new ApolloServer({
         schema: await buildSchema({
-            resolvers: [path.join(__dirname, '../dist/resolvers' , '/*.resolver.js')],
+            resolvers: [path.join(__dirname, '../dist/resolvers' , '/**/*.resolver.js')],
         }),
         context: ({ req , res }): MyContext => ({ redis: redisServer , req , res, dataSource }), 
         plugins: [

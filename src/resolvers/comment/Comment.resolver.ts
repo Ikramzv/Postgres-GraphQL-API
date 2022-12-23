@@ -1,6 +1,6 @@
 import { Arg, FieldResolver, Mutation, Resolver, Root } from "type-graphql";
-import CommentEntity from "../entities/Comment.entity";
-import UserEntity from "../entities/User.entity";
+import CommentEntity from "../../entities/Comment.entity";
+import UserEntity from "../../entities/User.entity";
 
 @Resolver(() => CommentEntity)
 class CommentResolver {

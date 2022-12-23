@@ -2,9 +2,9 @@ import bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
 import jwt_decode from 'jwt-decode';
 import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
-import UserEntity from "../entities/User.entity";
-import { LoginUserArgs, RegisterUserArgs, UserOrError } from "../inputs/inputs";
-import { MyContext } from "../types";
+import UserEntity from "../../entities/User.entity";
+import { LoginUserArgs, RegisterUserArgs, UserOrError } from "../../inputs/inputs";
+import { MyContext } from "../../types";
 
 @Resolver()
 class AuthResolver {

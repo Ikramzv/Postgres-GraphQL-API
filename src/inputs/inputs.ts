@@ -1,4 +1,4 @@
-import { Field, InputType, ObjectType } from "type-graphql"
+import { ArgsType, Field, InputType, ObjectType } from "type-graphql"
 import UserEntity from "../entities/User.entity"
 
 @InputType()
@@ -23,6 +23,29 @@ export class LoginUserArgs {
 
     @Field(() => String)
     password: string
+}
+
+//
+
+@ArgsType()
+export class PostArgs {
+    @Field(() => String)
+    title: string
+
+    @Field(() => String)
+    description: string
+}
+
+@InputType()
+export class UpdateArgs {
+    @Field(() => String)
+    postId: string
+
+    @Field(() => String, { nullable: true })
+    title: string
+
+    @Field(() => String, { nullable: true })
+    description: string
 }
 
 // Additional object types
