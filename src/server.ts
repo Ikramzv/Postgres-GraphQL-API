@@ -1,4 +1,4 @@
-/// <reference path="../declarations/declarations.d.ts" />
+/// <reference path="./declarations/declarations.d.ts" />
 
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core'
 import { ApolloServer } from 'apollo-server-express'

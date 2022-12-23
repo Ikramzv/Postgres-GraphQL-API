@@ -3,7 +3,7 @@ import CommentEntity from "../../../entities/Comment.entity"
 import LikesEntity from "../../../entities/Likes.entity"
 import PostEntity from "../../../entities/Post.entity"
 import { PostArgs, UpdateArgs } from "../../../inputs/inputs"
-import auth from "../../../middlewares/Auth"
+import auth from "../../../middlewares/auth"
 import { MyContext } from "../../../types"
 
 

@@ -5,6 +5,7 @@ import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
 import UserEntity from "../../entities/User.entity";
 import { LoginUserArgs, RegisterUserArgs, UserOrError } from "../../inputs/inputs";
 import { MyContext } from "../../types";
+import check from '../../utils/check';
 
 @Resolver()
 class AuthResolver {
@@ -17,6 +18,7 @@ class AuthResolver {
         const user: UserEntity[] = await UserEntity.query(`
             SELECT * FROM users u WHERE u.email = '${email}'
         `)
+        
         if(!user.length) return {
             error: {
                 title: "email",
@@ -52,10 +54,12 @@ class AuthResolver {
         }
     }
 
-    @Mutation(() => UserEntity , { nullable: true })
+    @Mutation(() => UserOrError , { nullable: true })
     async register (
         @Arg("options" , () => RegisterUserArgs) options: RegisterUserArgs
     ) {
+        const checkIfAnErrorExists = check(options)
+        if(checkIfAnErrorExists) return checkIfAnErrorExists
         const password = await bcrypt.hash(options.password , 12)
         const user = await UserEntity.query(`
             INSERT INTO users (
@@ -65,7 +69,7 @@ class AuthResolver {
             ) ON CONFLICT DO NOTHING RETURNING *
         `)
     
-        return user[0] ?? null
+        return user[0]
     }
 
     @Mutation(() => String)

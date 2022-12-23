@@ -2,7 +2,7 @@ import { Arg, Ctx, Mutation, Query, Resolver, UseMiddleware } from "type-graphql
 import PostEntity from "../../entities/Post.entity";
 import SaveEntity from '../../entities/Save.entity';
 import UserEntity from "../../entities/User.entity";
-import Auth from "../../middlewares/Auth";
+import Auth from "../../middlewares/auth";
 import { MyContext } from '../../types';
 
 
