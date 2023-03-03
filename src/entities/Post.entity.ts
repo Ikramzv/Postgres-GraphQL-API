@@ -20,6 +20,10 @@ class PostEntity extends BaseEntity {
     @Field(() => String)
     description: string
 
+    @Column("varchar")
+    @Field(() => String)
+    image: string
+
     @Field(() => UserEntity)
     user: UserEntity
 
@@ -28,7 +32,7 @@ class PostEntity extends BaseEntity {
     @Field(() => String)
     userId: UserEntity
 
-    @OneToMany(() => SavesEntity , (save) => save.post , { cascade: ["remove"] })
+    @OneToMany(() => SavesEntity , (save) => save.post , { cascade: true })
     saves: SavesEntity[]
 
     @OneToMany(() => CommentEntity , (comment) => comment.post, { cascade: ["remove"] })
