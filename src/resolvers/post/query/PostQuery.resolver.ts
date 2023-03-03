@@ -16,6 +16,7 @@ class PostQueryResolver {
     async post(
         @Arg("id",() => String) postId: string
     ): Promise<PostEntity> {
+        if(!postId) throw new Error("Id must be provided")
         const post = await PostEntity.query(`
             SELECT * FROM posts p WHERE p.id = '${postId}'
         `)
