@@ -35,6 +35,7 @@ class UserResolver {
         @Ctx() { req } : MyContext
     ) {
         const { session } = req
+        console.log(session.id)
         if(!session.userId) return null
         const user = await UserEntity.query(`
             SELECT * FROM users u WHERE u.id = '${session.userId}'
