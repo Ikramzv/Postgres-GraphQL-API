@@ -6,6 +6,7 @@ import UserEntity from "../../entities/User.entity";
 import { LoginUserArgs, RegisterUserArgs, UserOrError } from "../../inputs/inputs";
 import { MyContext } from "../../types";
 import check from '../../utils/check';
+import login_error_check from '../../utils/login_check';
 
 @Resolver()
 class AuthResolver {
@@ -13,28 +14,18 @@ class AuthResolver {
     async login (
         @Arg('options' , () => LoginUserArgs) options: LoginUserArgs,
         @Ctx() { req }: MyContext
-    ): Promise<UserOrError> {
+    ): Promise<UserOrError | null> {
         const { email , password } = options
+
         const user: UserEntity[] = await UserEntity.query(`
             SELECT * FROM users u WHERE u.email = '${email}'
         `)
         
-        if(!user.length) return {
-            error: {
-                title: "email",
-                description: "User is not found with that email"
-            },
-            data: null
-        } 
         const u = user[0]
-        const isValid = await bcrypt.compare(password , u.password)
-        if(!isValid) return {
-            data: null,
-            error: {
-                title: "password",
-                description: "Password is not correct"
-            }
-        }  
+
+        const error = login_error_check(u,password) 
+        
+        if(error) return error
         
         const payload = {
             id: u.id,
@@ -54,10 +45,10 @@ class AuthResolver {
         }
     }
 
-    @Mutation(() => UserOrError , { nullable: true })
+    @Mutation(() => UserOrError)
     async register (
         @Arg("options" , () => RegisterUserArgs) options: RegisterUserArgs
-    ) {
+    ): Promise<UserOrError | null> {
         const checkIfAnErrorExists = check(options)
         if(checkIfAnErrorExists) return checkIfAnErrorExists
         const password = await bcrypt.hash(options.password , 12)
@@ -69,7 +60,10 @@ class AuthResolver {
             ) ON CONFLICT DO NOTHING RETURNING *
         `)
     
-        return user[0]
+        return {
+            data: user[0],
+            error: null
+        }
     }
 
     @Mutation(() => String)
