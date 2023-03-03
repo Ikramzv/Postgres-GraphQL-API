@@ -21,8 +21,11 @@ export class LoginUserArgs {
     @Field(() => String)
     email: string
 
-    @Field(() => String)
+    @Field(() => String , { nullable: true })
     password: string
+
+    @Field(() => String , { nullable: true })
+    image: string
 }
 
 //
@@ -34,6 +37,9 @@ export class PostArgs {
 
     @Field(() => String)
     description: string
+
+    @Field(() => String)
+    image: string
 }
 
 @InputType()
