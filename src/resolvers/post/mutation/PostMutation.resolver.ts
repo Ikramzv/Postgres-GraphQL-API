@@ -15,13 +15,13 @@ class PostMutationResolver {
         @Args(() => PostArgs) args: PostArgs,
         @Ctx() { req }: MyContext
     ) {
-        const { title , description } = args
+        const { title , description, image } = args
 
         const post = await PostEntity.query(`
             INSERT INTO posts (
-                id , title, description, "userId"
+                id , title, description, image, "userId"
             ) VALUES (
-                DEFAULT , '${title}' , '${description}' , '${req.session.userId}'
+                DEFAULT , '${title}' , '${description}' , '${image}' , '${req.session.userId}'
             ) RETURNING *
         `)
                 
